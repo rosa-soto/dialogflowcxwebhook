@@ -10,16 +10,16 @@ import (
 )
 
 type Client struct {
+	HostName   string
 	HTTPClient *http.Client
 }
 
-func NewClient() *Client {
+func NewClient(url string) *Client {
 	return &Client{
+		HostName:   url,
 		HTTPClient: &http.Client{},
 	}
 }
-
-const dialogFlowAI = "https://dialogflow.cloud.google.com/v1/cx/integrations/messenger/webhook/b3984f5d-5e30-42f2-9ec9-8fc5feb28606/sessions/1234"
 
 type QueryInput struct {
 	Text         Text   `json:"text"`
@@ -192,7 +192,7 @@ type QueryResponse struct {
 	UlmCalls     int    `json:"ulmCalls"`
 }
 
-func (s *Client) Post(questionText string) ([]Responses, error) {
+func (c *Client) Post(questionText string) ([]Responses, error) {
 	var resp *http.Response
 	requestBody := map[string]interface{}{
 		"queryInput": map[string]interface{}{
@@ -208,14 +208,14 @@ func (s *Client) Post(questionText string) ([]Responses, error) {
 	}
 	req, err := http.NewRequest(
 		http.MethodPost,
-		dialogFlowAI,
+		c.HostName,
 		bytes.NewBuffer(requestBodyJSON))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP request: %s", err)
 	}
 	req.Header.Set("content-type", "application/json")
-	resp, err = s.HTTPClient.Do(req)
+	resp, err = c.HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to do HTTP request: %s", err)
 	}
@@ -224,11 +224,11 @@ func (s *Client) Post(questionText string) ([]Responses, error) {
 	}
 	defer resp.Body.Close()
 
-	c, err := io.ReadAll(resp.Body)
+	formatted, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	a := string(c[4:])
+	a := string(formatted[4:])
 	x := []byte(a)
 	var rs *QueryResponse
 	err = json.Unmarshal(x, &rs)
