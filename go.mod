@@ -1,4 +1,4 @@
-module github.com/rosa-soto/diaogflowcxwebhook
+module github.com/rosa-soto/dialogflowcxwebhook
 
 go 1.20
 
